@@ -349,4 +349,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Happy coding with Radnt CLI! 🚀**
 
-For more information, visit our [documentation](https://github.com/yourusername/radnt-cli) or follow us on [Twitter](https://twitter.com/radnt-cli).
+For more information, visit our [documentation](https://github.com/tubbymctubbzz/radnt-cli) or follow us on [Twitter](https://twitter.com/radnt-cli).
