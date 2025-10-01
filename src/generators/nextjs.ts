@@ -163,7 +163,7 @@ next-env.d.ts`;
   // Create README.md
   const readmeContent = `# ${config.projectName}
 
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [\`radnt-cli\`](https://github.com/yourusername/radnt-cli).
+This is a [Next.js](https://nextjs.org/) project bootstrapped with [\`radnt-cli\`](https://github.com/tubbymctubbzz/radnt-cli).
 
 ## Getting Started
 
