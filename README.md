@@ -1,5 +1,10 @@
 # Radnt CLI 🚀
 
+[![npm version](https://badge.fury.io/js/radnt-cli.svg)](https://badge.fury.io/js/radnt-cli)
+[![npm downloads](https://img.shields.io/npm/dm/radnt-cli.svg)](https://npmjs.com/package/radnt-cli)
+[![GitHub stars](https://img.shields.io/github/stars/tubbymctubbzz/radnt-cli.svg)](https://github.com/tubbymctubbzz/radnt-cli/stargazers)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A powerful CLI tool for creating Next.js projects with shadcn/ui and modern development tools. Get up and running with a beautiful, production-ready Next.js application in seconds.
 
 ## Features
@@ -349,4 +354,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Happy coding with Radnt CLI! 🚀**
 
-For more information, visit our [documentation](https://github.com/tubbymctubbzz/radnt-cli) or follow us on [Twitter](https://twitter.com/radnt-cli).
+For more information, visit our [documentation](https://github.com/yourusername/radnt-cli) or follow us on [Twitter](https://twitter.com/radnt-cli).
