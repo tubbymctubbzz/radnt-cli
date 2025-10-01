@@ -13,7 +13,7 @@ A powerful CLI tool for creating Next.js projects with shadcn/ui and modern deve
 - 🎨 **shadcn/ui Integration** - Beautiful, accessible components out of the box
 - 🔥 **Enhanced Dev Server** - Hot reload with WebSocket-based live updates
 - 📱 **Multiple Templates** - Basic, Dashboard, E-commerce, Blog, and Portfolio templates
-- 🛠️ **Modern Stack** - Next.js 14, TypeScript, Tailwind CSS, ESLint
+- 🛠️ **Modern Stack** - Next.js 15+, TypeScript, Tailwind CSS, ESLint
 - 📦 **Component Management** - Easy installation and management of UI components
 - 🎯 **Zero Configuration** - Sensible defaults with full customization options
 
