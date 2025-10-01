@@ -89,14 +89,12 @@ program
     await upgradeProject();
   });
 
-// Handle unknown commands
 program.on('command:*', () => {
   console.error(chalk.red(`Invalid command: ${program.args.join(' ')}`));
   console.log(chalk.yellow('See --help for a list of available commands.'));
   process.exit(1);
 });
 
-// Show help if no command is provided
 if (!process.argv.slice(2).length) {
   program.outputHelp();
   process.exit(0);
