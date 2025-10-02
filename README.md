@@ -5,15 +5,23 @@
 [![GitHub stars](https://img.shields.io/github/stars/tubbymctubbzz/radnt-cli.svg)](https://github.com/tubbymctubbzz/radnt-cli/stargazers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A powerful CLI tool for creating Next.js projects with shadcn/ui and modern development tools. Get up and running with a beautiful, production-ready Next.js application in seconds.
+**Build the future today** with the Radnt CLI for modern Next.js development. Create, deploy, and manage production-ready applications with enhanced tools, automatic dependency management, and seamless deployment workflows.
 
-## Features
+## ✨ Features
 
+### 🚀 **v2.0 - Major Release**
+- **🌐 Deployment System** - Deploy to Vercel, Netlify, and GitHub Pages with authentication
+- **🔧 Dependency Management** - Automatic installation of missing dependencies
+- **👤 Git Integration** - Comprehensive git status, user management, and workflows
+- **📊 Project Diagnostics** - Built-in health checks and issue detection
+- **🎨 Enhanced UI** - Beautiful ASCII art, update notifications, and improved UX
+
+### 🏗️ **Core Features**
 - ⚡ **Interactive Project Setup** - Choose from multiple templates and configurations
 - 🎨 **shadcn/ui Integration** - Beautiful, accessible components out of the box
 - 🔥 **Enhanced Dev Server** - Hot reload with WebSocket-based live updates
 - 📱 **Multiple Templates** - Basic, Dashboard, E-commerce, Blog, and Portfolio templates
-- 🛠️ **Modern Stack** - Next.js 15+, TypeScript, Tailwind CSS, ESLint
+- 🛠️ **Modern Stack** - Next.js 15, TypeScript, Tailwind CSS, ESLint
 - 📦 **Component Management** - Easy installation and management of UI components
 - 🎯 **Zero Configuration** - Sensible defaults with full customization options
 
@@ -29,8 +37,11 @@ radnt create my-app
 # Navigate to your project
 cd my-app
 
-# Start development server
-npm run dev
+# Start enhanced development server
+radnt dev
+
+# Deploy your project
+radnt deploy
 ```
 
 ## Installation
@@ -47,7 +58,9 @@ npm install -g radnt-cli
 npx radnt-cli create my-app
 ```
 
-## Commands
+## 🛠️ Commands
+
+### Core Commands
 
 ### `radnt create [project-name]`
 
@@ -147,6 +160,37 @@ Show current version and check for available updates.
 ```bash
 radnt version
 ```
+
+### New in v2.0
+
+### `radnt deploy [options]`
+
+Deploy your project to various platforms with automatic authentication and dependency management.
+
+```bash
+# Interactive platform selection
+radnt deploy
+
+# Deploy to specific platform
+radnt deploy --platform vercel
+radnt deploy --platform netlify
+radnt deploy --platform github
+
+# Deploy with build
+radnt deploy --build
+```
+
+**Platforms:**
+- **Vercel** - Zero-config deployment with automatic authentication and project linking
+- **Netlify** - JAMstack deployment with site initialization and configuration
+- **GitHub Pages** - Static hosting with automated GitHub Actions workflow
+
+**Features:**
+- 🔐 **Automatic Authentication** - Handles login flows for all platforms
+- 📋 **Git Integration** - Checks git status, manages uncommitted changes
+- 🔧 **Dependency Management** - Automatically installs missing dependencies
+- 👤 **User Management** - Detects and configures git user information
+- 🚀 **Smart Deployment** - Platform-specific optimizations and configurations
 
 ## Templates
 
@@ -252,9 +296,9 @@ The enhanced development server provides:
 - **File Watching**: Monitors all relevant project files
 - **Error Handling**: Better error reporting and recovery
 
-## Examples
+## 📚 Examples
 
-### Creating a Dashboard App
+### Creating and Deploying a Dashboard App
 
 ```bash
 # Create with dashboard template
@@ -266,7 +310,10 @@ cd my-dashboard
 radnt add data-table chart
 
 # Start development
-npm run dev
+radnt dev
+
+# Deploy to Vercel
+radnt deploy --platform vercel
 ```
 
 ### Adding Components to Existing Project
@@ -282,14 +329,39 @@ radnt add form input label button
 radnt add navigation-menu breadcrumb
 ```
 
-### Custom Development Workflow
+### Complete Development to Deployment Workflow
 
 ```bash
-# Start dev server on custom port
+# Create new project
+radnt create my-startup --template dashboard
+
+cd my-startup
+
+# Start development with enhanced server
 radnt dev --port 4000
 
-# In another terminal, add components as needed
-radnt add dialog popover tooltip
+# Add components as you build
+radnt add dialog popover tooltip data-table
+
+# Deploy when ready (handles git, dependencies, authentication)
+radnt deploy
+# ✅ Checks git status and user configuration
+# 🔧 Installs any missing dependencies automatically
+# 🔐 Handles platform authentication
+# 🚀 Deploys with platform-specific optimizations
+```
+
+### Deployment Scenarios
+
+```bash
+# Quick deployment to Vercel
+radnt deploy --platform vercel --build
+
+# Deploy to Netlify with automatic site setup
+radnt deploy --platform netlify
+
+# Setup GitHub Pages with Actions workflow
+radnt deploy --platform github
 ```
 
 ## Requirements
@@ -298,17 +370,38 @@ radnt add dialog popover tooltip
 - **Package Manager**: npm, yarn, or pnpm
 - **Operating System**: Windows, macOS, or Linux
 
-## Troubleshooting
+## 🔧 Troubleshooting
 
 ### Common Issues
 
 **Command not found: radnt**
 ```bash
 # Make sure it's installed globally
-npm install -g radnt-cli
+npm install -g radnt-cli@latest
 
 # Or use npx
-npx radnt-cli create my-app
+npx radnt-cli@latest create my-app
+```
+
+**Missing dependencies during build/deployment**
+```bash
+# v2.0 automatically installs missing dependencies
+radnt deploy --build
+# Will detect and install missing packages like @radix-ui/react-label
+```
+
+**Git user not configured**
+```bash
+# Radnt will prompt you to configure, or set manually:
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+```
+
+**Deployment authentication issues**
+```bash
+# Clear existing auth and re-authenticate
+vercel logout && radnt deploy --platform vercel
+netlify logout && radnt deploy --platform netlify
 ```
 
 **TypeScript errors after adding components**
@@ -317,16 +410,20 @@ npx radnt-cli create my-app
 npm run type-check
 ```
 
-**Tailwind styles not working**
+**Port already in use**
 ```bash
-# Ensure Tailwind is properly configured
-npm run build
+# Radnt automatically finds available ports
+radnt dev  # Will use 8001, 8002, etc. if 8000 is busy
+
+# Or kill existing servers
+radnt kill
 ```
 
 ### Getting Help
 
 - Check the [GitHub Issues](https://github.com/tubbymctubbzz/radnt-cli/issues)
 - Run `radnt --help` for command information
+- Use `radnt [command] --help` for specific command help
 
 ## License
 
@@ -341,6 +438,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Happy coding with Radnt CLI! 🚀**
+**Build the future today with Radnt CLI! 🚀**
 
-For more information, visit our [documentation](https://github.com/tubbymctubbzz/radnt-cli).
+For more information, visit our [documentation](https://github.com/tubbymctubbzz/radnt-cli) or check out the [changelog](https://github.com/tubbymctubbzz/radnt-cli/blob/main/CHANGELOG.md).
