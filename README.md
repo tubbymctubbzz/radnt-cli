@@ -325,19 +325,8 @@ npm run build
 
 ### Getting Help
 
-- Check the [GitHub Issues](https://github.com/yourusername/radnt-cli/issues)
+- Check the [GitHub Issues](https://github.com/tubbymctubbzz/radnt-cli/issues)
 - Run `radnt --help` for command information
-- Use `radnt [command] --help` for specific command help
-
-## Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
 ## License
 
@@ -354,4 +343,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Happy coding with Radnt CLI! 🚀**
 
-For more information, visit our [documentation](https://github.com/yourusername/radnt-cli) or follow us on [Twitter](https://twitter.com/radnt-cli).
+For more information, visit our [documentation](https://github.com/tubbymctubbzz/radnt-cli).
