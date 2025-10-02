@@ -1,11 +1,11 @@
 {
   "name": "radnt-cli",
-  "version": "1.0.8",
+  "version": "2.1.1",
   "description": "A powerful CLI tool for creating Next.js projects with shadcn/ui and modern development tools",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   },
-  "main": "dist/index.js",
   "bin": {
     "radnt": "dist/cli.js",
     "create-radnt-app": "dist/cli.js"
@@ -21,7 +21,9 @@
     "format": "prettier --write src/**/*.ts",
     "format:check": "prettier --check src/**/*.ts",
     "type-check": "tsc --noEmit",
-    "release": "node scripts/publish.js"
+    "release": "node scripts/publish.js",
+    "publish:github": "node scripts/publish-github.js",
+    "publish:dual": "node scripts/publish-dual.js"
   },
   "keywords": [
     "nextjs",
@@ -36,26 +38,39 @@
   "author": "Radnt Team",
   "license": "MIT",
   "dependencies": {
+    "boxen": "^5.1.2",
     "chalk": "^4.1.2",
     "chokidar": "^3.5.3",
+    "clipboardy": "^2.3.0",
     "commander": "^11.1.0",
     "cors": "^2.8.5",
+    "degit": "^2.8.4",
     "execa": "^5.1.1",
     "express": "^4.18.2",
+    "figlet": "^1.7.0",
     "fs-extra": "^11.1.1",
     "inquirer": "^8.2.6",
+    "listr2": "^8.0.1",
+    "node-fetch": "^2.7.0",
+    "open": "^8.4.2",
     "ora": "^5.4.1",
+    "radnt-cli": "^2.0.1",
     "semver": "^7.5.4",
     "socket.io": "^4.7.4",
+    "tar": "^6.2.0",
+    "update-notifier": "^7.0.0",
     "validate-npm-package-name": "^5.0.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
+    "@types/figlet": "^1.5.8",
     "@types/fs-extra": "^11.0.4",
     "@types/inquirer": "^8.2.10",
     "@types/jest": "^29.5.5",
     "@types/node": "^20.8.0",
     "@types/semver": "^7.5.4",
+    "@types/tar": "^6.1.11",
+    "@types/update-notifier": "^6.0.8",
     "@types/validate-npm-package-name": "^4.0.2",
     "@typescript-eslint/eslint-plugin": "^6.7.4",
     "@typescript-eslint/parser": "^6.7.4",
@@ -70,10 +85,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/tubbymctubbzz/radnt-cli.git"
+    "url": "git+https://github.com/tubbymctubbzz/radnt-cli.git"
   },
+  "homepage": "https://github.com/tubbymctubbzz/radnt-cli#readme",
   "bugs": {
     "url": "https://github.com/tubbymctubbzz/radnt-cli/issues"
-  },
-  "homepage": "https://github.com/tubbymctubbzz/radnt-cli#readme"
+  }
 }
