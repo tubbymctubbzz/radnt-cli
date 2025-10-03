@@ -5,11 +5,12 @@
 [![GitHub stars](https://img.shields.io/github/stars/tubbymctubbzz/radnt-cli.svg)](https://github.com/tubbymctubbzz/radnt-cli/stargazers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Build the future today** with the Radnt CLI for modern Next.js development. Create, deploy, and manage production-ready applications with enhanced tools, automatic dependency management, and seamless deployment workflows.
+**Build the future today** with Radnt CLI for modern Next.js development. Create, deploy, and manage production-ready applications with enhanced tools, automatic dependency management, and seamless deployment workflows.
 
 ## ✨ Features
 
-### 🚀 **v2.0 - Major Release**
+### 🚀 **v3.1 - Latest Release**
+- **🤖 Discord Bot Generator** - Create complete Discord bots with modular architecture
 - **🌐 Deployment System** - Deploy to Vercel, Netlify, and GitHub Pages with authentication
 - **🔧 Dependency Management** - Automatic installation of missing dependencies
 - **👤 Git Integration** - Comprehensive git status, user management, and workflows
@@ -42,6 +43,9 @@ radnt dev
 
 # Deploy your project
 radnt deploy
+
+# Create a Discord bot
+radnt discord-bot
 ```
 
 ## Installation
@@ -191,6 +195,67 @@ radnt deploy --build
 - 🔧 **Dependency Management** - Automatically installs missing dependencies
 - 👤 **User Management** - Detects and configures git user information
 - 🚀 **Smart Deployment** - Platform-specific optimizations and configurations
+
+### `radnt discord-bot`
+
+Create a complete Discord bot with modern features and professional structure.
+
+```bash
+# Interactive Discord bot setup
+radnt discord-bot
+```
+
+**Features:**
+- 🤖 **Complete Bot Setup** - Fully configured Discord bot with modular architecture
+- ⚡ **Global Slash Commands** - `/help`, `/ping`, and `/radnt-cli` commands included
+- 🏗️ **Professional Structure** - Separate commands, events, and utility folders
+- 🔧 **Auto-Configuration** - Token integration and dependency installation
+- 📦 **Feature Selection** - Choose from moderation, fun commands, analytics, and more
+- 🛡️ **Protected Branding** - Radnt CLI attribution preserved in bot
+
+**Generated Structure:**
+```
+my-discord-bot/
+├── src/
+│   ├── index.js              # Main bot file
+│   ├── commands/             # Individual command files
+│   │   ├── help.js          # Help command
+│   │   ├── ping.js          # Ping command
+│   │   └── radnt-cli.js     # Radnt CLI info command
+│   ├── events/              # Event handlers
+│   │   ├── ready.js         # Bot startup & command deployment
+│   │   └── interactionCreate.js # Command handling
+│   └── utils/               # Utility functions
+├── config/                  # Bot configuration
+├── .env                     # Environment variables (secure)
+└── package.json            # All dependencies included
+```
+
+**Available Features:**
+- 🛡️ **Moderation Tools** - Kick, ban, and server management
+- 🎮 **Fun Commands** - Games and entertainment
+- 📊 **Server Stats** - Analytics and insights
+- 🎭 **Role Management** - Automated role assignment
+- 🔔 **Auto Moderation** - Content filtering
+- 📈 **Analytics Dashboard** - Bot usage analytics
+- 🎨 **Welcome Messages** - Custom welcome cards
+- 📝 **Logging System** - Advanced logging
+
+### `radnt donate`
+
+Support Radnt CLI community through sharing and contributions.
+
+```bash
+# Show community support options
+radnt donate
+```
+
+**Community Support:**
+- **Share on Social Media** - Help spread the word to other developers
+- **Star Repository** - Show support and help others discover the project
+- **Report Issues & Suggest Features** - Help improve the tool
+- **Write Content** - Create tutorials, blog posts, or videos
+- **Code Contributions** - Submit pull requests and improve documentation
 
 ## Templates
 
@@ -362,6 +427,31 @@ radnt deploy --platform netlify
 
 # Setup GitHub Pages with Actions workflow
 radnt deploy --platform github
+```
+
+### Creating a Discord Bot
+
+```bash
+# Create a Discord bot with interactive setup
+radnt discord-bot
+
+# Follow the prompts:
+# 1. Enter your Discord bot token
+# 2. Enter your Discord application ID
+# 3. Choose bot name and prefix
+# 4. Select features (moderation, fun commands, etc.)
+
+cd my-discord-bot
+
+# Start the bot (dependencies already installed)
+npm run dev
+
+# Bot features:
+# ✅ Global slash commands (/help, /ping, /radnt-cli)
+# ✅ Modular architecture (commands/, events/, utils/)
+# ✅ Auto-deployment of commands
+# ✅ Professional error handling
+# ✅ Radnt CLI branding and promotion
 ```
 
 ## Requirements
