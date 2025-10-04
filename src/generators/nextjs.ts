@@ -163,7 +163,7 @@ next-env.d.ts`;
   // Create README.md
   const readmeContent = `# ${config.projectName}
 
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [\`radnt-cli\`](https://github.com/yourusername/radnt-cli).
+This is a [Next.js](https://nextjs.org/) project bootstrapped with [\`radnt-cli\`](https://github.com/tubbymctubbzz/radnt-cli).
 
 ## Getting Started
 
@@ -177,7 +177,7 @@ yarn dev
 pnpm dev
 \`\`\`
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:8000](http://localhost:8000) with your browser to see the result.
 
 You can start editing the page by modifying \`${config.appRouter ? 'app/page' : 'pages/index'}.${config.typescript ? 'tsx' : 'js'}\`. The page auto-updates as you edit the file.
 

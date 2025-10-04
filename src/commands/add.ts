@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import ora from 'ora';
 import fs from 'fs-extra';
 import path from 'path';
+import execa from 'execa';
 
 // Helper function for fuzzy matching
 function levenshteinDistance(str1: string, str2: string): number {
@@ -69,62 +70,53 @@ const availableComponents = [
   { name: 'tooltip', description: 'A popup that displays information related to an element' }
 ];
 
+// Helper function to find component with fuzzy matching
+function findComponent(componentName: string) {
+  // Check for exact match first
+  let component = availableComponents.find(c => c.name === componentName);
+  
+  if (!component) {
+    // Check for close matches (typos)
+    const closeMatches = availableComponents.filter(c => 
+      c.name.includes(componentName) || 
+      componentName.includes(c.name) ||
+      levenshteinDistance(c.name, componentName) <= 2
+    );
+    
+    if (closeMatches.length === 1) {
+      component = closeMatches[0];
+      console.log(chalk.yellow(`Did you mean "${component.name}"? Using that instead.`));
+    }
+  }
+  
+  return component;
+}
+
 export async function addComponent(componentName?: string, options: any = {}) {
   console.log(chalk.blue.bold('📦 Adding shadcn/ui components...\n'));
 
-  // Check if we're in a valid project
-  const componentsJsonPath = path.join(process.cwd(), 'components.json');
-  if (!await fs.pathExists(componentsJsonPath)) {
-    console.error(chalk.red('❌ No components.json found. Run "radnt init" first.'));
-    process.exit(1);
-  }
+  // Enhanced project validation
+  await validateProject();
+  
+  // Ensure required dependencies are installed
+  await ensureDependencies();
   let componentsToAdd: string[] = [];
 
   if (options.all) {
     componentsToAdd = availableComponents.map(c => c.name);
   } else if (componentName) {
-    // Check for exact match first
-    let component = availableComponents.find(c => c.name === componentName);
+    // Handle multiple components passed as arguments
+    const inputComponents = componentName.split(' ').filter(c => c.trim());
     
-    // If not found, check for close matches (typos)
-    if (!component) {
-      const closeMatches = availableComponents.filter(c => 
-        c.name.includes(componentName) || 
-        componentName.includes(c.name) ||
-        levenshteinDistance(c.name, componentName) <= 2
-      );
-      
-      if (closeMatches.length === 1) {
-        component = closeMatches[0];
-        console.log(chalk.yellow(`Did you mean "${component.name}"? Using that instead.`));
-      } else if (closeMatches.length > 1) {
-        console.error(chalk.red(`❌ Component "${componentName}" not found.`));
-        console.log(chalk.yellow('Did you mean one of these?'));
-        closeMatches.forEach(comp => {
-          console.log(chalk.cyan(`  • ${comp.name}`) + chalk.gray(` - ${comp.description}`));
-        });
-        const { selectedComponent } = await inquirer.prompt([
-          {
-            type: 'list',
-            name: 'selectedComponent',
-            message: 'Select the correct component:',
-            choices: closeMatches.map(c => ({
-              name: c.name,
-              value: c.name
-            }))
-          }
-        ]);
-        component = availableComponents.find(c => c.name === selectedComponent);
+    for (const comp of inputComponents) {
+      const component = findComponent(comp);
+      if (component) {
+        componentsToAdd.push(component.name);
       } else {
-        console.error(chalk.red(`❌ Component "${componentName}" not found.`));
-        console.log(chalk.yellow('Available components:'));
-        availableComponents.forEach(comp => {
-          console.log(chalk.cyan(`  • ${comp.name}`) + chalk.gray(` - ${comp.description}`));
-        });
+        console.error(chalk.red(`❌ Component "${comp}" not found.`));
         return;
       }
     }
-    componentsToAdd = [component!.name];
   } else {
     // Interactive selection
     const { selectedComponents } = await inquirer.prompt([
@@ -181,18 +173,23 @@ async function addSingleComponent(componentName: string) {
     return;
   }
 
-  // Get component content based on name
-  const componentContent = getComponentContent(componentName);
+  // Get component content and dependencies
+  const componentData = getComponentData(componentName);
   
-  if (!componentContent) {
+  if (!componentData) {
     throw new Error(`Component ${componentName} is not implemented yet`);
+  }
+
+  // Install component-specific dependencies
+  if (componentData.dependencies && componentData.dependencies.length > 0) {
+    await installDependencies(componentData.dependencies);
   }
 
   // Ensure directory exists
   await fs.ensureDir(path.dirname(componentPath));
   
   // Write component file
-  await fs.writeFile(componentPath, componentContent);
+  await fs.writeFile(componentPath, componentData.content);
 }
 
 function getComponentContent(componentName: string): string | null {
@@ -575,4 +572,655 @@ function toPascalCase(str: string): string {
     .split('-')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join('');
+}
+
+// Enhanced validation and dependency management
+async function validateProject() {
+  const packageJsonPath = path.join(process.cwd(), 'package.json');
+  const componentsJsonPath = path.join(process.cwd(), 'components.json');
+  
+  if (!await fs.pathExists(packageJsonPath)) {
+    console.error(chalk.red('❌ No package.json found. Make sure you\'re in a project directory.'));
+    process.exit(1);
+  }
+
+  if (!await fs.pathExists(componentsJsonPath)) {
+    console.error(chalk.red('❌ No components.json found. Run "radnt init" first.'));
+    process.exit(1);
+  }
+
+  // Ensure utils file exists
+  await ensureUtilsFile();
+}
+
+async function ensureUtilsFile() {
+  const utilsPath = path.join(process.cwd(), 'src/lib/utils.ts');
+  
+  if (!await fs.pathExists(utilsPath)) {
+    console.log(chalk.yellow('📝 Creating utils file...'));
+    
+    await fs.ensureDir(path.dirname(utilsPath));
+    const utilsContent = `import { type ClassValue, clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}`;
+    
+    await fs.writeFile(utilsPath, utilsContent);
+  }
+}
+
+async function ensureDependencies() {
+  const requiredDeps = [
+    'class-variance-authority',
+    'clsx',
+    'tailwind-merge'
+  ];
+
+  const packageJsonPath = path.join(process.cwd(), 'package.json');
+  const packageJson = await fs.readJson(packageJsonPath);
+  
+  const missingDeps = requiredDeps.filter(dep => 
+    !packageJson.dependencies?.[dep] && !packageJson.devDependencies?.[dep]
+  );
+
+  if (missingDeps.length > 0) {
+    console.log(chalk.yellow(`📦 Installing required dependencies: ${missingDeps.join(', ')}`));
+    await installDependencies(missingDeps);
+  }
+}
+
+async function installDependencies(deps: string[]) {
+  const packageManager = await detectPackageManager();
+  
+  try {
+    if (packageManager === 'yarn') {
+      await execa('yarn', ['add', ...deps], { stdio: 'pipe' });
+    } else if (packageManager === 'pnpm') {
+      await execa('pnpm', ['add', ...deps], { stdio: 'pipe' });
+    } else {
+      await execa('npm', ['install', ...deps], { stdio: 'pipe' });
+    }
+  } catch (error) {
+    console.error(chalk.red(`Failed to install dependencies: ${deps.join(', ')}`));
+    throw error;
+  }
+}
+
+async function detectPackageManager(): Promise<'npm' | 'yarn' | 'pnpm'> {
+  if (await fs.pathExists(path.join(process.cwd(), 'yarn.lock'))) {
+    return 'yarn';
+  }
+  if (await fs.pathExists(path.join(process.cwd(), 'pnpm-lock.yaml'))) {
+    return 'pnpm';
+  }
+  return 'npm';
+}
+
+interface ComponentData {
+  content: string;
+  dependencies?: string[];
+}
+
+function getComponentData(componentName: string): ComponentData | null {
+  const components: Record<string, ComponentData> = {
+    'alert': {
+      content: getComponentContent('alert')!,
+      dependencies: ['@radix-ui/react-alert-dialog']
+    },
+    'badge': {
+      content: getComponentContent('badge')!
+    },
+    'accordion': {
+      content: getComponentContent('accordion')!,
+      dependencies: ['@radix-ui/react-accordion', 'lucide-react']
+    },
+    'table': {
+      content: getComponentContent('table')!
+    },
+    'separator': {
+      content: getComponentContent('separator')!,
+      dependencies: ['@radix-ui/react-separator']
+    },
+    'skeleton': {
+      content: getComponentContent('skeleton')!
+    },
+    'avatar': {
+      content: getComponentContent('avatar')!,
+      dependencies: ['@radix-ui/react-avatar']
+    },
+    'button': {
+      content: `import * as React from "react"
+import { Slot } from "@radix-ui/react-slot"
+import { cva, type VariantProps } from "class-variance-authority"
+
+import { cn } from "@/lib/utils"
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline:
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-10 px-4 py-2",
+        sm: "h-9 rounded-md px-3",
+        lg: "h-11 rounded-md px-8",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button"
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+Button.displayName = "Button"
+
+export { Button, buttonVariants }`,
+      dependencies: ['@radix-ui/react-slot']
+    },
+    'card': {
+      content: `import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+const Card = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "rounded-lg border bg-card text-card-foreground shadow-sm",
+      className
+    )}
+    {...props}
+  />
+))
+Card.displayName = "Card"
+
+const CardHeader = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn("flex flex-col space-y-1.5 p-6", className)} {...props} />
+))
+CardHeader.displayName = "CardHeader"
+
+const CardTitle = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLHeadingElement>
+>(({ className, ...props }, ref) => (
+  <h3
+    ref={ref}
+    className={cn(
+      "text-2xl font-semibold leading-none tracking-tight",
+      className
+    )}
+    {...props}
+  />
+))
+CardTitle.displayName = "CardTitle"
+
+const CardDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <p ref={ref} className={cn("text-sm text-muted-foreground", className)} {...props} />
+))
+CardDescription.displayName = "CardDescription"
+
+const CardContent = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+))
+CardContent.displayName = "CardContent"
+
+const CardFooter = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn("flex items-center p-6 pt-0", className)} {...props} />
+))
+CardFooter.displayName = "CardFooter"
+
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }`
+    },
+    'input': {
+      content: `import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+export interface InputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {}
+
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, ...props }, ref) => {
+    return (
+      <input
+        type={type}
+        className={cn(
+          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          className
+        )}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+Input.displayName = "Input"
+
+export { Input }`
+    },
+    'label': {
+      content: `import * as React from "react"
+import * as LabelPrimitive from "@radix-ui/react-label"
+import { cva, type VariantProps } from "class-variance-authority"
+
+import { cn } from "@/lib/utils"
+
+const labelVariants = cva(
+  "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+)
+
+const Label = React.forwardRef<
+  React.ElementRef<typeof LabelPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root> &
+    VariantProps<typeof labelVariants>
+>(({ className, ...props }, ref) => (
+  <LabelPrimitive.Root
+    ref={ref}
+    className={cn(labelVariants(), className)}
+    {...props}
+  />
+))
+Label.displayName = LabelPrimitive.Root.displayName
+
+export { Label }`,
+      dependencies: ['@radix-ui/react-label']
+    },
+    'checkbox': {
+      content: `"use client"
+
+import * as React from "react"
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
+import { Check } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+
+const Checkbox = React.forwardRef<
+  React.ElementRef<typeof CheckboxPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
+>(({ className, ...props }, ref) => (
+  <CheckboxPrimitive.Root
+    ref={ref}
+    className={cn(
+      "peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
+      className
+    )}
+    {...props}
+  >
+    <CheckboxPrimitive.Indicator
+      className={cn("flex items-center justify-center text-current")}
+    >
+      <Check className="h-4 w-4" />
+    </CheckboxPrimitive.Indicator>
+  </CheckboxPrimitive.Root>
+))
+Checkbox.displayName = CheckboxPrimitive.Root.displayName
+
+export { Checkbox }`,
+      dependencies: ['@radix-ui/react-checkbox', 'lucide-react']
+    },
+    'dialog': {
+      content: `"use client"
+
+import * as React from "react"
+import * as DialogPrimitive from "@radix-ui/react-dialog"
+import { X } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+
+const Dialog = DialogPrimitive.Root
+
+const DialogTrigger = DialogPrimitive.Trigger
+
+const DialogPortal = DialogPrimitive.Portal
+
+const DialogClose = DialogPrimitive.Close
+
+const DialogOverlay = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Overlay>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Overlay
+    ref={ref}
+    className={cn(
+      "fixed inset-0 z-50 bg-background/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      className
+    )}
+    {...props}
+  />
+))
+DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
+
+const DialogContent = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
+>(({ className, children, ...props }, ref) => (
+  <DialogPortal>
+    <DialogOverlay />
+    <DialogPrimitive.Content
+      ref={ref}
+      className={cn(
+        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+        className
+      )}
+      {...props}
+    >
+      {children}
+      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+        <X className="h-4 w-4" />
+        <span className="sr-only">Close</span>
+      </DialogPrimitive.Close>
+    </DialogPrimitive.Content>
+  </DialogPortal>
+))
+DialogContent.displayName = DialogPrimitive.Content.displayName
+
+const DialogHeader = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn(
+      "flex flex-col space-y-1.5 text-center sm:text-left",
+      className
+    )}
+    {...props}
+  />
+)
+DialogHeader.displayName = "DialogHeader"
+
+const DialogFooter = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn(
+      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
+      className
+    )}
+    {...props}
+  />
+)
+DialogFooter.displayName = "DialogFooter"
+
+const DialogTitle = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Title>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Title
+    ref={ref}
+    className={cn(
+      "text-lg font-semibold leading-none tracking-tight",
+      className
+    )}
+    {...props}
+  />
+))
+DialogTitle.displayName = DialogPrimitive.Title.displayName
+
+const DialogDescription = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Description>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Description
+    ref={ref}
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
+))
+DialogDescription.displayName = DialogPrimitive.Description.displayName
+
+export {
+  Dialog,
+  DialogPortal,
+  DialogOverlay,
+  DialogClose,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+}`,
+      dependencies: ['@radix-ui/react-dialog', 'lucide-react']
+    },
+    'tabs': {
+      content: `"use client"
+
+import * as React from "react"
+import * as TabsPrimitive from "@radix-ui/react-tabs"
+
+import { cn } from "@/lib/utils"
+
+const Tabs = TabsPrimitive.Root
+
+const TabsList = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.List>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
+>(({ className, ...props }, ref) => (
+  <TabsPrimitive.List
+    ref={ref}
+    className={cn(
+      "inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground",
+      className
+    )}
+    {...props}
+  />
+))
+TabsList.displayName = TabsPrimitive.List.displayName
+
+const TabsTrigger = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
+>(({ className, ...props }, ref) => (
+  <TabsPrimitive.Trigger
+    ref={ref}
+    className={cn(
+      "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",
+      className
+    )}
+    {...props}
+  />
+))
+TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
+
+const TabsContent = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
+>(({ className, ...props }, ref) => (
+  <TabsPrimitive.Content
+    ref={ref}
+    className={cn(
+      "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+      className
+    )}
+    {...props}
+  />
+))
+TabsContent.displayName = TabsPrimitive.Content.displayName
+
+export { Tabs, TabsList, TabsTrigger, TabsContent }`,
+      dependencies: ['@radix-ui/react-tabs']
+    },
+    'toast': {
+      content: `"use client"
+
+import * as React from "react"
+import * as ToastPrimitives from "@radix-ui/react-toast"
+import { cva, type VariantProps } from "class-variance-authority"
+import { X } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+
+const ToastProvider = ToastPrimitives.Provider
+
+const ToastViewport = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Viewport>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Viewport>
+>(({ className, ...props }, ref) => (
+  <ToastPrimitives.Viewport
+    ref={ref}
+    className={cn(
+      "fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]",
+      className
+    )}
+    {...props}
+  />
+))
+ToastViewport.displayName = ToastPrimitives.Viewport.displayName
+
+const toastVariants = cva(
+  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-6 pr-8 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full",
+  {
+    variants: {
+      variant: {
+        default: "border bg-background text-foreground",
+        destructive:
+          "destructive border-destructive bg-destructive text-destructive-foreground",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+)
+
+const Toast = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Root>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root> &
+    VariantProps<typeof toastVariants>
+>(({ className, variant, ...props }, ref) => {
+  return (
+    <ToastPrimitives.Root
+      ref={ref}
+      className={cn(toastVariants({ variant }), className)}
+      {...props}
+    />
+  )
+})
+Toast.displayName = ToastPrimitives.Root.displayName
+
+const ToastAction = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Action>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Action>
+>(({ className, ...props }, ref) => (
+  <ToastPrimitives.Action
+    ref={ref}
+    className={cn(
+      "inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium ring-offset-background transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-muted/40 group-[.destructive]:hover:border-destructive/30 group-[.destructive]:hover:bg-destructive group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:focus:ring-destructive",
+      className
+    )}
+    {...props}
+  />
+))
+ToastAction.displayName = ToastPrimitives.Action.displayName
+
+const ToastClose = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Close>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Close>
+>(({ className, ...props }, ref) => (
+  <ToastPrimitives.Close
+    ref={ref}
+    className={cn(
+      "absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-red-300 group-[.destructive]:hover:text-red-50 group-[.destructive]:focus:ring-red-400 group-[.destructive]:focus:ring-offset-red-600",
+      className
+    )}
+    toast-close=""
+    {...props}
+  >
+    <X className="h-4 w-4" />
+  </ToastPrimitives.Close>
+))
+ToastClose.displayName = ToastPrimitives.Close.displayName
+
+const ToastTitle = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Title>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Title>
+>(({ className, ...props }, ref) => (
+  <ToastPrimitives.Title
+    ref={ref}
+    className={cn("text-sm font-semibold", className)}
+    {...props}
+  />
+))
+ToastTitle.displayName = ToastPrimitives.Title.displayName
+
+const ToastDescription = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Description>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Description>
+>(({ className, ...props }, ref) => (
+  <ToastPrimitives.Description
+    ref={ref}
+    className={cn("text-sm opacity-90", className)}
+    {...props}
+  />
+))
+ToastDescription.displayName = ToastPrimitives.Description.displayName
+
+type ToastProps = React.ComponentPropsWithoutRef<typeof Toast>
+
+type ToastActionElement = React.ReactElement<typeof ToastAction>
+
+export {
+  type ToastProps,
+  type ToastActionElement,
+  ToastProvider,
+  ToastViewport,
+  Toast,
+  ToastTitle,
+  ToastDescription,
+  ToastClose,
+  ToastAction,
+}`,
+      dependencies: ['@radix-ui/react-toast', 'lucide-react']
+    }
+  };
+
+  return components[componentName] || null;
 }

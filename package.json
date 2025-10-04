@@ -1,6 +1,6 @@
 {
   "name": "radnt-cli",
-  "version": "2.1.1",
+  "version": "3.2.0",
   "description": "A powerful CLI tool for creating Next.js projects with shadcn/ui and modern development tools",
   "publishConfig": {
     "access": "public",
@@ -54,7 +54,7 @@
     "node-fetch": "^2.7.0",
     "open": "^8.4.2",
     "ora": "^5.4.1",
-    "radnt-cli": "^2.0.1",
+    "radnt-cli": "^2.1.1",
     "semver": "^7.5.4",
     "socket.io": "^4.7.4",
     "tar": "^6.2.0",

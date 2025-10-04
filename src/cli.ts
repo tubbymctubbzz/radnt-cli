@@ -123,17 +123,43 @@ program
   .description('Upgrade existing project to use latest Radnt templates and design')
   .action(async () => {
     const { upgradeProject } = await import('./commands/upgrade');
-    await upgradeProject();
   });
 
 program
   .command('deploy')
   .description('Deploy your project to various platforms (Vercel, Netlify, etc.)')
-  .option('-p, --platform <platform>', 'Deployment platform (vercel, netlify, github)', 'vercel')
-  .option('--build', 'Build before deploying', true)
+  .option('--platform <platform>', 'Deployment platform (vercel, netlify, github)')
+  .option('--build', 'Build project before deployment')
+  .option('--force', 'Force deployment without checks')
   .action(async (options) => {
     const { deployProject } = await import('./commands/deploy');
     await deployProject(options);
+  });
+
+program
+  .command('discord-bot')
+  .description('Create a complete Discord bot with advanced features')
+  .action(async () => {
+    const { setupDiscordBot } = await import('./commands/discord-bot');
+    await setupDiscordBot();
+  });
+
+program
+  .command('donate')
+  .description('Support Radnt CLI community through sharing and contributions')
+  .action(async () => {
+    const { showDonateInfo } = await import('./commands/donate');
+    await showDonateInfo();
+  });
+
+program
+  .command('website')
+  .alias('web')
+  .description('Open the official Radnt website')
+  .option('-p, --print', 'Print the URL instead of opening it')
+  .action(async (options) => {
+    const { openWebsite } = await import('./commands/website');
+    await openWebsite(options);
   });
 
 program.on('command:*', () => {
@@ -141,7 +167,6 @@ program.on('command:*', () => {
   console.log(chalk.yellow('See --help for a list of available commands.'));
   process.exit(1);
 });
-
 // Show enhanced help if no command is provided
 if (!process.argv.slice(2).length) {
   try {
@@ -160,6 +185,10 @@ if (!process.argv.slice(2).length) {
   console.log(chalk.white('  radnt create my-app    # Create a new project'));
   console.log(chalk.white('  radnt dev              # Start development server'));
   console.log(chalk.white('  radnt add button       # Add shadcn/ui components'));
+  console.log(chalk.white('  radnt deploy           # Deploy your project'));
+  console.log(chalk.cyan('  radnt discord-bot      # Create Discord bot with features'));
+  console.log(chalk.magenta('  radnt website          # Open official Radnt website'));
+  console.log(chalk.yellow('  radnt donate           # Support the community 🌟'));
   console.log(chalk.gray('\nFor more help: https://github.com/tubbymctubbzz/radnt-cli\n'));
   process.exit(0);
 }
